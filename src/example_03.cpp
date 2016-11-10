@@ -200,14 +200,11 @@ int readinfile(){
     while(num_patches){
         BeizerPatch bz = BeizerPatch();
         for(int i = 0;i<4;i++){
-            infile.getline(buffer,200,'\n');
-            string s = buffer;
-            istringstream in(s);
-            float x, y, z;
-            in >> x >> y >> z;
-            cout<<x<<" "<<y<<" "<<z<<endl;
-
-
+            for (int j = 0; j < 4; ++j) {
+                float a,b,c;
+                infile >> a >> b >> c;
+                bz.points.push_back(Vec3(a,b,c));
+            }
         }
         bzs.push_back(bz);
         num_patches--;
@@ -235,7 +232,7 @@ int main(int argc, char *argv[]) {
         {
             //reading the file name
             inputfile_name =  argv[1];
-            readinfile();
+            readinfile();//reading from file
             i++;
         }
         if (!strcmp(argv[i], "-o")) {
