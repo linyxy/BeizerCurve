@@ -11,10 +11,8 @@
 #include <math.h>
 
 //include matrix
-#include <glm/vec3.hpp> // glm::vec3
-#include <glm/vec4.hpp> // glm::vec4
-#include <glm/mat4x4.hpp> // glm::mat4
-#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
+#include <glm/glm.hpp>
+#include "BeizerPatch.h"
 
 #ifdef _WIN32
 static DWORD lastTime;
@@ -33,14 +31,14 @@ For UC Berkeley's CS184 Fall 2016 course, assignment 3 (Bezier surfaces)
 //****************************************************
 // Global Variables
 //****************************************************
-GLfloat translation[3] = {0.0f, 0.0f, 0.0f};
+GLfloat translation[3] = {1.0f, 0.0f, 0.0f};
 bool auto_strech = false;
 int Width_global = 400;
 int Height_global = 400;
 int Z_buffer_bit_depth = 128;
-
+string inputfile_name;
 inline float sqr(float x) { return x*x; }
-
+vector<BeizerPatch> bzs;
 
 //****************************************************
 // Simple init function
@@ -184,11 +182,56 @@ void size_callback(GLFWwindow* window, int width, int height)
     display(window);
 }
 
+//****************************************************
+// reading from file
+//****************************************************
+int readinfile(){
+    printf("reading obj from file: %s \n", inputfile_name.c_str());
+    FILE * obj_file = fopen(inputfile_name.c_str(), "r");
+    int num_patches;
+    int res = fscanf(obj_file, "%s", &num_patches);
+    while(num_patches){
+        BeizerPatch bz = BeizerPatch();
+        for(int q = 0;q<4;q++){
+            Vec3* v;
+            for(int p = 0 ;p<4;p++){
+                GLfloat a1,a2,a3;
+                fscanf(obj_file,"%f %f %f",&a1,&a2,&a3);
+                *v = Vec3(a1,a2,a3);
+                bz.points.push_back(*v);
+            }
+        }
+        bzs.push_back(bz);
+        num_patches--;
+    }
+
+}
 
 //****************************************************
 // the usual stuff, nothing exciting here
 //****************************************************
 int main(int argc, char *argv[]) {
+    //reading file
+    int i = 0;
+    while (i < argc) {
+        {
+            //reading the file name
+            inputfile_name =  argv[0];
+            readinfile();
+            i++;
+        }
+        if (!strcmp(argv[i], "-o")) {
+            //designating output file name
+            i++;
+            string name(argv[i]);
+//            OUTPUT_FILE = name + ".ppm";
+
+        } else if(0){
+
+        }
+
+    }
+
     //This initializes glfw
     initializeRendering();
     
@@ -242,3 +285,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+

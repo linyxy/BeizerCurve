@@ -131,6 +131,9 @@ add_subdirectory(glew)
 include_directories(glew/include)
 # set_property( TARGET glew APPEND_STRING PROPERTY COMPILE_FLAGS -w )
 
+# glm
+add_subdirectory(glm)
+include_directories(glm)
 #-------------------------------------------------------------------------------
 # Add subdirectories
 #-------------------------------------------------------------------------------
