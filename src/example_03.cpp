@@ -137,6 +137,95 @@ void drawCube() {
    glEnd();  // End of drawing color-cube
 }
 
+//****************************************************
+// Bezier interpretation
+//****************************************************
+int bezcurveinterp(vector<Vec3> &curve, double u,Vec3* P,Vec3* dPdu){
+    Vec3 A = Vec3(curve.at(0) * (1.0-u) + curve.at(1) * u);
+//    cout<<"cv @ 0"<<curve.at(1)._str()<<endl;
+    Vec3 B = Vec3(curve.at(1) * (1.0-u) + curve.at(2) * u);
+    Vec3 C = Vec3(curve.at(2) * (1.0-u) + curve.at(3) * u);
+//    cout<<B._str()<<"B?"<<endl;
+
+    //split AB & BC to DE
+    Vec3 D(A * (1.0-u) + B * u);
+    Vec3 E(B * (1.0-u) + C * u);
+    //picked point on curve
+//    cout<<D._str()<<"D?"<<endl;
+//    cout<<E._str()<<"E?"<<endl;
+
+    *P = Vec3(D * (1.0-u) + E * u);
+//    cout<<P->_str()<<"P?"<<endl;
+
+    //derivative
+    *dPdu = Vec3( (E - D) * 3);
+//    cout<<dPdu->_str()<<"dpdu?"<<endl;
+
+    return 0;
+}
+
+int bezpatchinterp(BeizerPatch &bz,double u, double v,Vec3* p,Vec3* n){
+    vector<Vec3> vcurve,ucurve,temp_c;
+    int place = 0;
+    //v component
+    for (int i = 0; i < 4; ++i) {
+        for(int k = 0;k<4;k++ ) {
+//            cout<<place<<"place?"<<endl;
+            temp_c.push_back(bz.points.at(place));
+            place++;
+        }
+        Vec3 dpdv = Vec3(),v0 = Vec3();
+        bezcurveinterp(temp_c,u,&v0,&dpdv);
+        vcurve.push_back(v0);
+        temp_c.clear();
+    }
+    //u component
+    place = 0;
+    for(int i = 0; i < 4; ++i) {
+        for (int k = 0; k < 4; ++k) {
+//            cout<<place<<"place2?"<<endl;
+            temp_c.push_back(bz.points.at(place));
+
+            place+=4;
+        }
+        Vec3 dpdu = Vec3(),u0 = Vec3();
+        bezcurveinterp(temp_c,v,&u0,&dpdu);
+        place = (place+1)%16;
+        ucurve.push_back(u0);
+        temp_c.clear();
+    }
+
+    //interpret curve
+    Vec3 dPdv = Vec3(),dPdu=Vec3();
+    bezcurveinterp(vcurve,v,p,&dPdv);
+    bezcurveinterp(ucurve,v,p,&dPdu);
+
+    *n = dPdu.cross(dPdv);
+    n->normal();
+
+    return 0;
+}
+
+void beizerContour(BeizerPatch bz){
+
+
+    glColor3f(1.0f,1.0f,1.0f);
+    for (double u = 0; u < 1; u+=0.25) {
+        glBegin(GL_LINE_STRIP);
+        for (double v = 0; v < 1; v+=0.25) {
+            Vec3 point= Vec3(),n = Vec3();
+            bezpatchinterp(bz,u,v,&point,&n);
+            glVertex3f(point.x ,  point.y, point.z);
+            cout<<"v:"<<point._str()<<endl;
+        }
+        glEnd();
+    }
+
+
+}
+
+
+
 
 //****************************************************
 // function that does the actual drawing of stuff
@@ -153,8 +242,8 @@ void display( GLFWwindow* window )
     glPushMatrix();
     glTranslatef (translation[0], translation[1], translation[2]);
     glRotatef(45, 1, 1, 0); //rotates the cube below
-    drawCube(); // REPLACE ME!
-
+//    drawCube(); // REPLACE ME!
+    beizerContour(bzs.at(0));
     glPopMatrix();
     
     glfwSwapBuffers(window);
@@ -222,60 +311,7 @@ int readinfile(){
     return 0;
 }
 
-//****************************************************
-// Bezier interpretation
-//****************************************************
-int bezcurveinterp(vector<Vec3> &curve, double u,Vec3* P,Vec3* dPdu){
-    Vec3 A = curve.at(0) * (1.0-u) + curve.at(1) * u;
-    Vec3 B = curve.at(1) * (1.0-u) + curve.at(2) * u;
-    Vec3 C = curve.at(2) * (1.0-u) + curve.at(3) * u;
-    //split AB & BC to DE
-    Vec3 D(A * (1.0-u) + B * u);
-    Vec3 E(B * (1.0-u) + C * u);
-    //picked point on curve
-    *P = (D * (1.0-u) + E * u);
-    //derivative
-    *dPdu = ( (E - D) * 3);
-    return 0;
-}
 
-int bezpatchinterp(BeizerPatch &bz,double u, double v,Vec3* p,Vec3* n){
-    vector<Vec3> vcurve,ucurve,temp_c;
-    int place = 0;
-    //v component
-    for (int i = 0; i < 4; ++i) {
-        for(int k = 0;k<4;k++ ) {
-            temp_c.push_back(bz.points.at(place));
-            place++;
-        }
-        Vec3 dpdv(0,0,0),v0(0,0,0);
-        bezcurveinterp(temp_c,u,&v0,&dpdv);
-        vcurve.push_back(v0);
-        temp_c.clear();
-    }
-    //u component
-    for(int i = 0; i < 4; ++i) {
-        for (int k = 0; k < 4; ++k) {
-            temp_c.push_back(bz.points.at(place));
-            place+=4;
-        }
-        Vec3 dpdu(0,0,0),u0(0,0,0);
-        bezcurveinterp(temp_c,v,&u0,&dpdu);
-        place = (place+5)%16;
-        ucurve.push_back(u0);
-        temp_c.clear();
-    }
-
-    //interpret curve
-    Vec3 dPdv(0,0,0),dPdu(0,0,0);
-    bezcurveinterp(vcurve,v,p,&dPdv);
-    bezcurveinterp(ucurve,v,p,&dPdu);
-
-    *n = dPdu.cross(dPdv);
-    n->normal();
-
-    return 0;
-}
 
 
 
@@ -284,13 +320,12 @@ int bezpatchinterp(BeizerPatch &bz,double u, double v,Vec3* p,Vec3* n){
 //****************************************************
 int main(int argc, char *argv[]) {
     //reading file
-    int i = 1;
+    int i = 0;
     while (i < argc) {
-        {
+        if(i==1){
             //reading the file name
             inputfile_name =  argv[1];
             readinfile();//reading from file
-            i++;
         }
         if (!strcmp(argv[i], "-o")) {
             //designating output file name
@@ -298,8 +333,10 @@ int main(int argc, char *argv[]) {
             string name(argv[i]);
 //            OUTPUT_FILE = name + ".ppm";
 
-        } else if(0){
+        } else if(0) {
 
+        }else{
+            i++;
         }
 
     }
