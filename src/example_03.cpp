@@ -223,6 +223,63 @@ int readinfile(){
 }
 
 //****************************************************
+// Bezier interpretation
+//****************************************************
+int bezcurveinterp(vector<Vec3> &curve, double u,Vec3* P,Vec3* dPdu){
+    Vec3 A = curve.at(0) * (1.0-u) + curve.at(1) * u;
+    Vec3 B = curve.at(1) * (1.0-u) + curve.at(2) * u;
+    Vec3 C = curve.at(2) * (1.0-u) + curve.at(3) * u;
+    //split AB & BC to DE
+    Vec3 D(A * (1.0-u) + B * u);
+    Vec3 E(B * (1.0-u) + C * u);
+    //picked point on curve
+    *P = (D * (1.0-u) + E * u);
+    //derivative
+    *dPdu = ( (E - D) * 3);
+    return 0;
+}
+
+int bezpatchinterp(BeizerPatch &bz,double u, double v,Vec3* p,Vec3* n){
+    vector<Vec3> vcurve,ucurve,temp_c;
+    int place = 0;
+    //v component
+    for (int i = 0; i < 4; ++i) {
+        for(int k = 0;k<4;k++ ) {
+            temp_c.push_back(bz.points.at(place));
+            place++;
+        }
+        Vec3 dpdv(0,0,0),v0(0,0,0);
+        bezcurveinterp(temp_c,u,&v0,&dpdv);
+        vcurve.push_back(v0);
+        temp_c.clear();
+    }
+    //u component
+    for(int i = 0; i < 4; ++i) {
+        for (int k = 0; k < 4; ++k) {
+            temp_c.push_back(bz.points.at(place));
+            place+=4;
+        }
+        Vec3 dpdu(0,0,0),u0(0,0,0);
+        bezcurveinterp(temp_c,v,&u0,&dpdu);
+        place = (place+5)%16;
+        ucurve.push_back(u0);
+        temp_c.clear();
+    }
+
+    //interpret curve
+    Vec3 dPdv(0,0,0),dPdu(0,0,0);
+    bezcurveinterp(vcurve,v,p,&dPdv);
+    bezcurveinterp(ucurve,v,p,&dPdu);
+
+    *n = dPdu.cross(dPdv);
+    n->normal();
+
+    return 0;
+}
+
+
+
+//****************************************************
 // the usual stuff, nothing exciting here
 //****************************************************
 int main(int argc, char *argv[]) {
