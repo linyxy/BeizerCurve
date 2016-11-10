@@ -1,5 +1,4 @@
 #include <vector>
-#include <iostream>
 #include <fstream>
 #include <cmath>
 
@@ -187,24 +186,43 @@ void size_callback(GLFWwindow* window, int width, int height)
 //****************************************************
 int readinfile(){
     printf("reading obj from file: %s \n", inputfile_name.c_str());
-    FILE * obj_file = fopen(inputfile_name.c_str(), "r");
+    ifstream infile(inputfile_name.c_str(),ios::in);
+
     int num_patches;
-    int res = fscanf(obj_file, "%s", &num_patches);
+    char buffer[200];
+    if(!infile.is_open()){
+        cout<<"wrong reading file"<<endl;
+        return 1;
+    }
+    infile.getline(buffer,200,'\n');
+    num_patches = atoi(buffer);
+    cout<<num_patches<<endl;
     while(num_patches){
         BeizerPatch bz = BeizerPatch();
-        for(int q = 0;q<4;q++){
-            Vec3* v;
-            for(int p = 0 ;p<4;p++){
-                GLfloat a1,a2,a3;
-                fscanf(obj_file,"%f %f %f",&a1,&a2,&a3);
-                *v = Vec3(a1,a2,a3);
-                bz.points.push_back(*v);
-            }
+        for(int i = 0;i<4;i++){
+            infile.getline(buffer,200,'\n');
+            string s = buffer;
+            istringstream in(s);
+            float x, y, z;
+            in >> x >> y >> z;
+            cout<<x<<" "<<y<<" "<<z<<endl;
+
+
         }
         bzs.push_back(bz);
         num_patches--;
     }
 
+    //output test
+    for(int i = 0;i<bzs.size();i++){
+        vector<Vec3> vv(bzs.at(i).points);
+        for(int k = 0;k<16;k++){
+            cout<<vv.at(k)._str()<<"  ";
+        }
+        cout<<"\n";
+    }
+    infile.close();
+    return 0;
 }
 
 //****************************************************
@@ -212,11 +230,11 @@ int readinfile(){
 //****************************************************
 int main(int argc, char *argv[]) {
     //reading file
-    int i = 0;
+    int i = 1;
     while (i < argc) {
         {
             //reading the file name
-            inputfile_name =  argv[0];
+            inputfile_name =  argv[1];
             readinfile();
             i++;
         }

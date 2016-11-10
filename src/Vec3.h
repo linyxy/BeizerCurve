@@ -13,11 +13,11 @@ class Vec3
 {
 
 public:
-    GLfloat x,y,z;
+    float x,y,z;
 
 public:
     //constructor
-    Vec3(GLfloat  x, GLfloat  y, GLfloat  z);
+    Vec3(float  x, float  y, float  z);
     Vec3();
 
 
@@ -27,7 +27,7 @@ public:
     Vec3 operator-() const;
     void normal();
 
-    GLfloat length() const ;
+    float length() const ;
     //重载
     //add
     Vec3 operator+(Vec3 va) const ;
@@ -36,15 +36,15 @@ public:
     Vec3 operator-(Vec3 va) const;
     Vec3 operator-=(Vec3 &va);
     //scale
-    Vec3 operator*(GLfloat m) const;
-    Vec3& operator*=(GLfloat m);
+    Vec3 operator*(float m) const;
+    Vec3& operator*=(float m);
 
-    Vec3 operator/(GLfloat m) const;
+    Vec3 operator/(float m) const;
 
     //dist
-    GLfloat  dist(Vec3 &va) const ;
+    float  dist(Vec3 &va) const ;
     //dot prodcut
-    GLfloat  operator*(Vec3 va) const;
+    float  operator*(Vec3 va) const;
 
     Vec3 indi_scale(Vec3 &va) const;
     //cross product
@@ -56,6 +56,6 @@ public:
 
 };
 
-Vec3 operator*(GLfloat m, Vec3 &va);
+Vec3 operator*(float m, Vec3 &va);
 
 #endif //ASSIGNMENT1_VEC3_H

@@ -7,7 +7,8 @@ cmake_minimum_required(VERSION 2.8)
 set(APPLICATION_SOURCE
     
     example_03.cpp
-        BeizerPatch.cpp BeizerPatch.h)
+        BeizerPatch.cpp BeizerPatch.h
+        Vec3.cpp Vec3.h)
 
 #-------------------------------------------------------------------------------
 # Set include directories
