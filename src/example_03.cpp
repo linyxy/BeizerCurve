@@ -198,7 +198,7 @@ int bezpatchinterp(BeizerPatch &bz,double u, double v,Vec3* p,Vec3* n){
     //interpret curve
     Vec3 dPdv = Vec3(),dPdu=Vec3();
     bezcurveinterp(vcurve,v,p,&dPdv);
-    bezcurveinterp(ucurve,v,p,&dPdu);
+    bezcurveinterp(ucurve,u,p,&dPdu);
 
     *n = dPdu.cross(dPdv);
     n->normal();
@@ -209,20 +209,26 @@ int bezpatchinterp(BeizerPatch &bz,double u, double v,Vec3* p,Vec3* n){
 void beizerContour(BeizerPatch bz){
 
 
-    glColor3f(1.0f,1.0f,1.0f);
-    for (double u = 0; u < 1; u+=0.25) {
+
+
+    for (double u = 0; u < 1.001; u+=0.1) {
         glBegin(GL_LINE_STRIP);
-        for (double v = 0; v < 1; v+=0.25) {
+        glColor3f(1.0f,1.0f,1.0f);
+        glLineWidth(1);
+        for (double v = 0; v < 1.001; v+=0.1) {
             Vec3 point= Vec3(),n = Vec3();
             bezpatchinterp(bz,u,v,&point,&n);
             glVertex3f(point.x ,  point.y, point.z);
-            cout<<"v:"<<point._str()<<endl;
+//            cout<<"v:"<<point._str()<<endl;
         }
+//        cout<<"uv pos:"<<u<<" "<<endl;
         glEnd();
     }
 
 
 }
+
+
 
 
 
@@ -241,9 +247,13 @@ void display( GLFWwindow* window )
     //----------------------- code to draw objects --------------------------
     glPushMatrix();
     glTranslatef (translation[0], translation[1], translation[2]);
-    glRotatef(45, 1, 1, 0); //rotates the cube below
+//    glRotatef(45, 1, 1, 0); //rotates the cube below
 //    drawCube(); // REPLACE ME!
-    beizerContour(bzs.at(0));
+    vector<BeizerPatch>::iterator bz_unit = bzs.begin();
+    while(bz_unit!=bzs.end()){
+        beizerContour(*bz_unit);
+        bz_unit++;
+    }
     glPopMatrix();
     
     glfwSwapBuffers(window);
@@ -378,6 +388,8 @@ int main(int argc, char *argv[]) {
     glfwSetWindowTitle(window, "CS184");
     glfwSetWindowSizeCallback(window, size_callback);
     glfwSetKeyCallback(window, key_callback);
+
+
 
     while( !glfwWindowShouldClose( window ) ) // infinite loop to draw object again and again
     {   // because once object is draw then window is terminated
