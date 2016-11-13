@@ -37,6 +37,7 @@ int Height_global = 400;
 int Z_buffer_bit_depth = 128;
 string inputfile_name;
 inline float sqr(float x) { return x*x; }
+double SUB_DIV_PARAM = 0.1;
 vector<BeizerPatch> bzs;
 
 
@@ -245,8 +246,8 @@ int beizerContour(){
     return 0;
 }
 
-int tessellateSinglePatch(BeizerPatch &bz,double num_step){
-    double step_size = 1/num_step;
+int tessellateSinglePatch(BeizerPatch &bz){
+    double step_size = SUB_DIV_PARAM;
     for (double t_hor = 0; t_hor < 1.001; t_hor+=step_size) {
         glBegin(GL_LINE_STRIP);
 //        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
@@ -266,8 +267,8 @@ int tessellateSinglePatch(BeizerPatch &bz,double num_step){
     return 0;
 }
 
-int tessellateSinglePatchV2(BeizerPatch &bz,double num_step){
-    double step_size = 1/num_step;
+int tessellateSinglePatchV2(BeizerPatch &bz){
+    double step_size = SUB_DIV_PARAM;
     for (double t_hor = 0; t_hor < 1.001; t_hor+=step_size) {
         glBegin(GL_LINE_STRIP);
 //        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
@@ -294,10 +295,10 @@ int tessellateSinglePatchV2(BeizerPatch &bz,double num_step){
     return 0;
 }
 
-int uniformTessellation(double num_step){
+int uniformTessellation(){
     vector<BeizerPatch>::iterator bz_unit = bzs.begin();
     while(bz_unit!=bzs.end()){
-        tessellateSinglePatchV2(*bz_unit,num_step);
+        tessellateSinglePatchV2(*bz_unit);
         bz_unit++;
     }
     return 0;
@@ -327,7 +328,7 @@ void display( GLFWwindow* window )
     if(!MODE_SELECTOR){
         beizerContour();
     } else{
-        uniformTessellation(10.0);
+        uniformTessellation();
     }
     glPopMatrix();
     
@@ -385,13 +386,13 @@ int readinfile(){
     }
 
     //output test
-    for(int i = 0;i<bzs.size();i++){
-        vector<Vec3> vv(bzs.at(i).points);
-        for(int k = 0;k<16;k++){
-            cout<<vv.at(k)._str()<<"  ";
-        }
-        cout<<"\n";
-    }
+//    for(int i = 0;i<bzs.size();i++){
+//        vector<Vec3> vv(bzs.at(i).points);
+//        for(int k = 0;k<16;k++){
+//            cout<<vv.at(k)._str()<<"  ";
+//        }
+//        cout<<"\n";
+//    }
     infile.close();
     return 0;
 }
@@ -405,13 +406,12 @@ int readinfile(){
 //****************************************************
 int main(int argc, char *argv[]) {
     //reading file
-    int i = 0;
+    int i = 3;
+    //reading the file name
+    inputfile_name =  argv[1];
+    readinfile();//reading from file
+    SUB_DIV_PARAM = atof(argv[2]);
     while (i < argc) {
-        if(i==1){
-            //reading the file name
-            inputfile_name =  argv[1];
-            readinfile();//reading from file
-        }
         if (!strcmp(argv[i], "-o")) {
             //designating output file name
             i++;
