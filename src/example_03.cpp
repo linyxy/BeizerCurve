@@ -30,7 +30,7 @@ For UC Berkeley's CS184 Fall 2016 course, assignment 3 (Bezier surfaces)
 //****************************************************
 // Global Variables
 //****************************************************
-GLfloat translation[3] = {1.0f, 0.0f, 0.0f};
+GLfloat translation[3] = {0.0f, 0.0f, 0.0f};
 bool auto_strech = false;
 int Width_global = 400;
 int Height_global = 400;
@@ -38,6 +38,17 @@ int Z_buffer_bit_depth = 128;
 string inputfile_name;
 inline float sqr(float x) { return x*x; }
 vector<BeizerPatch> bzs;
+
+
+//****************************************************
+// MODE SELECTOR
+//****************************************************
+/*
+ * 0 : Naive countour
+ * 1 : uniform tessellation
+ */
+int MODE_SELECTOR = 1;
+
 
 //****************************************************
 // Simple init function
@@ -206,9 +217,7 @@ int bezpatchinterp(BeizerPatch &bz,double u, double v,Vec3* p,Vec3* n){
     return 0;
 }
 
-void beizerContour(BeizerPatch bz){
-
-
+void beizerContourPatch(BeizerPatch bz){
 
 
     for (double u = 0; u < 1.001; u+=0.1) {
@@ -225,7 +234,73 @@ void beizerContour(BeizerPatch bz){
         glEnd();
     }
 
+}
 
+int beizerContour(){
+    vector<BeizerPatch>::iterator bz_unit = bzs.begin();
+    while(bz_unit!=bzs.end()){
+        beizerContourPatch(*bz_unit);
+        bz_unit++;
+    }
+    return 0;
+}
+
+int tessellateSinglePatch(BeizerPatch &bz,double num_step){
+    double step_size = 1/num_step;
+    for (double t_hor = 0; t_hor < 1.001; t_hor+=step_size) {
+        glBegin(GL_LINE_STRIP);
+//        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+        glPolygonMode(GL_FRONT,GL_LINE);
+        glColor3f(1.0f,1.0f,1.0f);
+//        glLineWidth(1);
+        for (double t_ver = 0; t_ver < 1.001; t_ver+=step_size) {
+            Vec3 A1 = Vec3(),B2 = Vec3();//,B1 = Vec3(),C = Vec3();
+            Vec3 nor = Vec3();
+            bezpatchinterp(bz,t_hor,t_ver,&A1,&nor);
+            bezpatchinterp(bz,t_hor+step_size,t_ver,&B2,&nor);
+            glVertex3f(A1.x,A1.y,A1.z);
+            glVertex3f(B2.x,B2.y,B2.z);
+        }
+        glEnd();
+    }
+    return 0;
+}
+
+int tessellateSinglePatchV2(BeizerPatch &bz,double num_step){
+    double step_size = 1/num_step;
+    for (double t_hor = 0; t_hor < 1.001; t_hor+=step_size) {
+        glBegin(GL_LINE_STRIP);
+//        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+        glPolygonMode(GL_FRONT,GL_LINE);
+        glColor3f(1.0f,1.0f,1.0f);
+//        glLineWidth(1);
+        for (double t_ver = 0; t_ver < 1.001; t_ver+=step_size) {
+            Vec3 A1 = Vec3(),B2 = Vec3(),B1 = Vec3(),C = Vec3();
+            Vec3 nor = Vec3();
+            bezpatchinterp(bz,t_hor,t_ver,&A1,&nor);
+            bezpatchinterp(bz,t_hor+step_size,t_ver,&B2,&nor);
+            bezpatchinterp(bz,t_hor,t_ver+step_size,&B1,&nor);
+            bezpatchinterp(bz,t_hor+step_size,t_ver+step_size,&C,&nor);
+            glVertex3f(A1.x,A1.y,A1.z);
+            glVertex3f(B2.x,B2.y,B2.z);
+            glVertex3f(B1.x,B1.y,B1.z);
+            glVertex3f(A1.x,A1.y,A1.z);
+            glVertex3f(B2.x,B2.y,B2.z);
+            glVertex3f(C.x,C.y,C.z);
+            glVertex3f(B1.x,B1.y,B1.z);
+        }
+        glEnd();
+    }
+    return 0;
+}
+
+int uniformTessellation(double num_step){
+    vector<BeizerPatch>::iterator bz_unit = bzs.begin();
+    while(bz_unit!=bzs.end()){
+        tessellateSinglePatchV2(*bz_unit,num_step);
+        bz_unit++;
+    }
+    return 0;
 }
 
 
@@ -247,12 +322,12 @@ void display( GLFWwindow* window )
     //----------------------- code to draw objects --------------------------
     glPushMatrix();
     glTranslatef (translation[0], translation[1], translation[2]);
-//    glRotatef(45, 1, 1, 0); //rotates the cube below
+    glRotatef(-45, 1, 0, 0); //rotates the cube below
 //    drawCube(); // REPLACE ME!
-    vector<BeizerPatch>::iterator bz_unit = bzs.begin();
-    while(bz_unit!=bzs.end()){
-        beizerContour(*bz_unit);
-        bz_unit++;
+    if(!MODE_SELECTOR){
+        beizerContour();
+    } else{
+        uniformTessellation(10.0);
     }
     glPopMatrix();
     
