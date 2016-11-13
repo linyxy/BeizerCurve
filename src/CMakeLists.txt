@@ -8,7 +8,10 @@ set(APPLICATION_SOURCE
     
     example_03.cpp
         BeizerPatch.cpp BeizerPatch.h
-        Vec3.cpp Vec3.h)
+        Vec3.cpp Vec3.h
+        Triangle.cpp Triangle.h
+        dirLight.cpp dirLight.h
+        Color.cpp Color.h)
 
 #-------------------------------------------------------------------------------
 # Set include directories

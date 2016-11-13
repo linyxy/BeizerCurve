@@ -12,6 +12,7 @@
 //include matrix
 #include <glm/glm.hpp>
 #include "BeizerPatch.h"
+#include "dirLight.h"
 
 #ifdef _WIN32
 static DWORD lastTime;
@@ -30,7 +31,7 @@ For UC Berkeley's CS184 Fall 2016 course, assignment 3 (Bezier surfaces)
 //****************************************************
 // Global Variables
 //****************************************************
-GLfloat translation[3] = {0.0f, 0.0f, 0.0f};
+GLfloat translation[3] = {0.0f, 0.0f, 1.0f};
 bool auto_strech = false;
 int Width_global = 400;
 int Height_global = 400;
@@ -38,6 +39,7 @@ int Z_buffer_bit_depth = 128;
 string inputfile_name;
 inline float sqr(float x) { return x*x; }
 double SUB_DIV_PARAM = 0.1;
+dirLight pt = dirLight(Vec3(1,1,1),Color(1,1,1));
 vector<BeizerPatch> bzs;
 
 
@@ -46,9 +48,14 @@ vector<BeizerPatch> bzs;
 //****************************************************
 /*
  * 0 : Naive countour
- * 1 : uniform tessellation
+ * 1 : uniform tessellation wire form
+ * 2 : uniform tessellation diffuse
+ * 3 : uniform tess wire && deffuse
+ * 4 : adaptive tess wire form
+ * 5 : adaptive tess wire form
+ * 6 : adaptive tess wire form
  */
-int MODE_SELECTOR = 1;
+int MODE_SELECTOR = 3;
 
 
 //****************************************************
@@ -91,6 +98,17 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_KEY_F:
             if (action && mods == GLFW_MOD_SHIFT) auto_strech = !auto_strech; break;
         case GLFW_KEY_SPACE: break;
+        case GLFW_KEY_W :
+            cout<<"mode_number?"<<MODE_SELECTOR<<endl;
+            if(MODE_SELECTOR == 1){ MODE_SELECTOR = 2 ;}
+            else if(MODE_SELECTOR == 2){ MODE_SELECTOR = 1;}
+            else if(MODE_SELECTOR == 3){ MODE_SELECTOR = 1;}
+            break;
+        case GLFW_KEY_H:
+            if(MODE_SELECTOR<3){ MODE_SELECTOR = 3;}
+            else if(MODE_SELECTOR==3){MODE_SELECTOR = 2;}
+            else if(MODE_SELECTOR>3) MODE_SELECTOR = 6;
+            else if (MODE_SELECTOR ==6){MODE_SELECTOR = 4;}
             
         default: break;
     }
@@ -147,6 +165,26 @@ void drawCube() {
       glVertex3f(1.0f, -1.0f,  1.0f);
       glVertex3f(1.0f, -1.0f, -1.0f);
    glEnd();  // End of drawing color-cube
+}
+
+//****************************************************
+// Difuse Shader
+//****************************************************
+Vec3 diffuse_comp(Vec3 nor){
+    //nor & ray_dir already normalized
+    Vec3 refle = Vec3(1,1,1);
+    Vec3 result = Vec3();
+
+    //iterate through directional light
+
+        GLfloat d = (pt.direction) * nor;
+        Vec3 comp = d * pt.color.co;
+
+        result += comp.indi_scale(refle);
+
+
+
+    return result;
 }
 
 //****************************************************
@@ -295,16 +333,70 @@ int tessellateSinglePatchV2(BeizerPatch &bz){
     return 0;
 }
 
-int uniformTessellation(){
-    vector<BeizerPatch>::iterator bz_unit = bzs.begin();
-    while(bz_unit!=bzs.end()){
-        tessellateSinglePatchV2(*bz_unit);
-        bz_unit++;
+
+int tessellateSinglePatchfill(BeizerPatch &bz){
+    double step_size = SUB_DIV_PARAM;
+    for (double t_hor = 0; t_hor < 1.001; t_hor+=step_size) {
+        glBegin(GL_TRIANGLES);
+//        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+        glPolygonMode(GL_FRONT,GL_LINE);
+//        glLineWidth(1);
+        for (double t_ver = 0; t_ver < 1.001; t_ver+=step_size) {
+            Vec3 A1 = Vec3(),B2 = Vec3(),B1 = Vec3(),C = Vec3();
+            Vec3 nor = Vec3(),nor2 = Vec3();
+
+            bezpatchinterp(bz,t_hor,t_ver+step_size,&B1,&nor);
+            bezpatchinterp(bz,t_hor+step_size,t_ver+step_size,&C,&nor);
+            bezpatchinterp(bz,t_hor+step_size,t_ver,&B2,&nor2);
+            bezpatchinterp(bz,t_hor,t_ver,&A1,&nor);
+
+            //tr1
+            Vec3 color = diffuse_comp(nor);
+            glColor3f(color.x,color.y,color.z);
+            glVertex3f(A1.x,A1.y,A1.z);
+            glVertex3f(B1.x,B1.y,B1.z);
+            glVertex3f(B2.x,B2.y,B2.z);
+
+            //tr2
+            color = diffuse_comp(nor2);
+            glColor3f(color.x,color.y,color.z);
+            glVertex3f(B2.x,B2.y,B2.z);
+            glVertex3f(B1.x,B1.y,B1.z);
+            glVertex3f(C.x,C.y,C.z);
+
+
+        }
+        glEnd();
     }
     return 0;
 }
 
+int uniformTessellation(){
+    vector<BeizerPatch>::iterator bz_unit = bzs.begin();
+    if(MODE_SELECTOR==1){
+        while(bz_unit!=bzs.end()){
+            tessellateSinglePatchV2(*bz_unit);
+            bz_unit++;
+        }
+    } else if(MODE_SELECTOR==2){
+        while(bz_unit!=bzs.end()){
+            tessellateSinglePatchfill(*bz_unit);
+            bz_unit++;
+        }
+    } else if(MODE_SELECTOR == 3){
+        while(bz_unit!=bzs.end()){
+            tessellateSinglePatchV2(*bz_unit);
+            tessellateSinglePatchfill(*bz_unit);
+            bz_unit++;
+        }
+    }
 
+    return 0;
+}
+
+int adaptiveTessellation(){
+
+}
 
 
 
@@ -322,12 +414,14 @@ void display( GLFWwindow* window )
     
     //----------------------- code to draw objects --------------------------
     glPushMatrix();
+    glRotatef(215, 1, 0, 0); //rotates the cube below
     glTranslatef (translation[0], translation[1], translation[2]);
-    glRotatef(-45, 1, 0, 0); //rotates the cube below
+//    glTranslatef (0.0, 0.0, 0.0);
+
 //    drawCube(); // REPLACE ME!
     if(!MODE_SELECTOR){
         beizerContour();
-    } else{
+    } else if(MODE_SELECTOR>=1&& MODE_SELECTOR<=3){
         uniformTessellation();
     }
     glPopMatrix();
