@@ -133,7 +133,7 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
             break;
         case GLFW_KEY_SPACE:
             break;
-        case GLFW_KEY_W :
+        case GLFW_KEY_W : // Filled vs. Wireframe Mode
             cout << "mode_number?" << MODE_SELECTOR << endl;
             if(action){
                 if (MODE_SELECTOR == 1) { MODE_SELECTOR = 2; }
@@ -141,7 +141,7 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
                 else if (MODE_SELECTOR == 3) { MODE_SELECTOR = 1; }
             }
             break;
-        case GLFW_KEY_H:
+        case GLFW_KEY_H: // Filled vs. Hidden-line Mode
             if(action){
                 if (MODE_SELECTOR < 3) { MODE_SELECTOR = 3; }
                 else if (MODE_SELECTOR == 3) { MODE_SELECTOR = 2; }
@@ -150,17 +150,18 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
             }
             break;
 
-        case GLFW_KEY_S:
+        case GLFW_KEY_S: // Flat vs. Smooth Shading
             if(action){
                 FLAT_SMOOTH = (!FLAT_SMOOTH);
             }
-        case GLFW_KEY_EQUAL:
+            break;
+
+        case GLFW_KEY_EQUAL: // Zoom In
             if(action){
                 translation[2] += 1.0f;
-                // TODO 这里有个bug trs[2]并不能+ ,非常奇怪
-                cout<<translation[2]<<endl;
             }
-        case GLFW_KEY_MINUS:
+            break;
+        case GLFW_KEY_MINUS: // Zoom Out
             if(action){
                 translation[2] -= 1.0f;
             }
