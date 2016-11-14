@@ -307,6 +307,9 @@ int bezpatchinterp(BeizerPatch &bz, double u, double v, Vec3 *p, Vec3 *n) {
     bezcurveinterp(ucurve, u, p, &dPdu);
 
     *n = dPdu.cross(dPdv);
+    if((*n).is_zero()){
+        *n = dPdv;
+    }
     n->normal();
 
     return 0;
