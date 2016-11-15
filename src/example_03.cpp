@@ -32,6 +32,8 @@ For UC Berkeley's CS184 Fall 2016 course, assignment 3 (Bezier surfaces)
 // Global Variables
 //****************************************************
 GLfloat translation[3] = {0.0f, 0.0f, 1.0f};
+GLfloat scale = 1.0f;
+GLfloat SCALING_FACTOR = 1.25F;
 GLfloat theta[3] = {0.0f, 0.0f, 0.0f};
 bool auto_strech = false;
 int Width_global = 400;
@@ -158,12 +160,12 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
 
         case GLFW_KEY_EQUAL: // Zoom In
             if(action){
-                translation[2] += 1.0f;
+                scale *= SCALING_FACTOR;
             }
             break;
         case GLFW_KEY_MINUS: // Zoom Out
             if(action){
-                translation[2] -= 1.0f;
+                scale /= SCALING_FACTOR;
             }
             break;
         default:
@@ -516,6 +518,8 @@ void display(GLFWwindow *window) {
     glRotatef(theta[0], 1, 0, 0); //rotates the cube below
     glRotatef(theta[1], 0, 1, 0); //rotates the cube below
     glTranslatef(translation[0], translation[1], translation[2]);
+    glScalef(scale, scale, scale);
+
     teapot_mat();
     glPopMatrix();
     glfwSwapBuffers(window);
