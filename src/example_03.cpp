@@ -31,15 +31,23 @@ For UC Berkeley's CS184 Fall 2016 course, assignment 3 (Bezier surfaces)
 //****************************************************
 // Global Variables
 //****************************************************
+
+// matrix transformation
 GLfloat translation[3] = {0.0f, 0.0f, 1.0f};
 GLfloat scale = 1.0f;
 GLfloat SCALING_FACTOR = 1.25F;
 GLfloat theta[3] = {0.0f, 0.0f, 0.0f};
+
+// openGL display
 bool auto_strech = false;
 int Width_global = 400;
 int Height_global = 400;
 int Z_buffer_bit_depth = 128;
+
+// input/output
+bool if_output = false;
 string inputfile_name;
+string outputfile_name;
 
 inline float sqr(float x) { return x * x; }
 
@@ -586,6 +594,45 @@ int readinfile() {
     return 0;
 }
 
+void output_to_obj(){
+
+    ofstream output_file;
+    output_file.open (outputfile_name);
+    int vertex_index = 1;
+
+    vector<BeizerPatch>::iterator bz_iter = bzs.begin();
+    while (bz_iter != bzs.end()) {
+        double step_size = SUB_DIV_PARAM;
+
+        for (double t_hor = 0; t_hor < 1.001; t_hor += step_size) {
+
+            for (double t_ver = 0; t_ver < 1.001; t_ver += step_size) {
+                Vec3 A1 = Vec3(), B2 = Vec3(), B1 = Vec3(), C = Vec3();
+                Vec3 nor = Vec3();
+
+                bezpatchinterp(*bz_iter, t_hor, t_ver, &A1, &nor);
+                bezpatchinterp(*bz_iter, t_hor + step_size, t_ver, &B2, &nor);
+                bezpatchinterp(*bz_iter, t_hor, t_ver + step_size, &B1, &nor);
+                bezpatchinterp(*bz_iter, t_hor + step_size, t_ver + step_size, &C, &nor);
+
+
+                output_file << "v " << A1.x << " " << A1.y << " " << A1.z << "\n";
+                output_file << "v " << B1.x << " " << B1.y << " " << B1.z << "\n";
+                output_file << "v " << B2.x << " " << B2.y << " " << B2.z << "\n";
+                output_file << "v " << C.x << " " << C.y << " " << C.z << "\n";
+                output_file << "f " << vertex_index << " " << vertex_index+1 << " " << vertex_index+2 << "\n";
+                output_file << "f " << vertex_index+1 << " " << vertex_index+2 << " " << vertex_index+3 << "\n";
+                vertex_index += 4;
+            }
+        }
+
+        bz_iter++;
+    }
+
+    output_file.close();
+
+}
+
 
 //****************************************************
 // the usual stuff, nothing exciting here
@@ -598,18 +645,25 @@ int main(int argc, char *argv[]) {
     readinfile();//reading from file
     SUB_DIV_PARAM = atof(argv[2]);
     while (i < argc) {
-        if (!strcmp(argv[i], "-o")) {
-            //designating output file name
+        if (strcmp(argv[i], "-o")) {
+            //Output to a obj file
+            outputfile_name = argv[i];
+            if_output = true;
+
             i++;
-            string name(argv[i]);
-//            OUTPUT_FILE = name + ".ppm";
 
         } else if (0) {
 
         } else {
             i++;
         }
+    }
 
+    // If a obj file is given for output, no OpenGL window should be opened
+
+    if (if_output){
+        output_to_obj();
+        exit(0);
     }
 
     //This initializes glfw
