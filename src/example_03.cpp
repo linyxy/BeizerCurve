@@ -1,6 +1,8 @@
 #include <vector>
 #include <fstream>
 #include <cmath>
+#include <sstream>
+#include <iostream>
 
 //include header file for glfw library so that we can use OpenGL
 #include <GLFW/glfw3.h>
@@ -13,6 +15,7 @@
 //#include <glm/glm.hpp>
 #include "BeizerPatch.h"
 #include "dirLight.h"
+#include "Triangle.h"
 
 #ifdef _WIN32
 static DWORD lastTime;
@@ -46,6 +49,7 @@ int Z_buffer_bit_depth = 128;
 
 // input/output
 bool if_output = false;
+bool if_input_obj = false;
 string inputfile_name;
 string outputfile_name;
 
@@ -54,6 +58,7 @@ inline float sqr(float x) { return x * x; }
 double SUB_DIV_PARAM = 0.1;
 //dirLight pt = dirLight(Vec3(1,1,1),Color(1,1,1));
 vector<BeizerPatch> bzs;
+vector<Triangle> triangles;
 
 
 //****************************************************
@@ -235,7 +240,7 @@ void drawCube() {
 }
 
 //****************************************************
-// Difuse Shader
+// Diffuse Shader
 //****************************************************
 //Vec3 diffuse_comp(Vec3 nor){
 //    //nor & ray_dir already normalized
@@ -494,6 +499,20 @@ void teapot_mat(){
     glPopMatrix();
 }
 
+
+void render_obj_file(){
+    glPushMatrix();
+    vector<Triangle>::iterator tri_iter = triangles.begin();
+    while (tri_iter != triangles.end()) {
+        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        glEnable(GL_LIGHTING);
+        (*tri_iter).draw();
+
+        tri_iter++;
+    }
+    glPopMatrix();
+}
+
 //****************************************************
 // function that does the actual drawing of stuff
 //***************************************************
@@ -528,7 +547,13 @@ void display(GLFWwindow *window) {
     glTranslatef(translation[0], translation[1], translation[2]);
     glScalef(scale, scale, scale);
 
-    teapot_mat();
+    if (if_input_obj){
+        render_obj_file();
+
+    } else {
+        teapot_mat();
+    }
+
     glPopMatrix();
     glfwSwapBuffers(window);
 
@@ -594,6 +619,63 @@ int readinfile() {
     return 0;
 }
 
+void split(string &s, char delim, vector<string> &elems) {
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+}
+
+int readobj() {
+    printf("reading obj from file: %s \n", inputfile_name.c_str());
+    ifstream infile(inputfile_name.c_str(), ios::in);
+
+    int num_patches;
+//    char buffer[200];
+    string line;
+
+
+    if(infile.is_open()) {
+        vector<Vec3> points;
+        while (getline(infile, line)) {
+            vector<string> slist;
+
+            split(line, ' ', slist);
+
+            if (slist.size() > 0 && slist[0].compare("v") == 0) {
+                Vec3 p(atof(slist[1].c_str()), atof(slist[2].c_str()), atof(slist[3].c_str()));
+                points.push_back(p);
+            } else if (slist.size() > 0 && slist[0].compare("f") == 0) {
+                int point_index1 = atoi(slist[1].c_str());
+                int point_index2 = atoi(slist[2].c_str());
+                int point_index3 = atoi(slist[3].c_str());
+
+                if (slist.size() == 5) {
+                    int point_index4 = atoi(slist[4].c_str());
+                    Triangle t1(points[point_index4 - 1], points[point_index1 - 1], points[point_index2 - 1]);
+                    Triangle t2(points[point_index4 - 1], points[point_index2 - 1], points[point_index3 - 1]);
+                    triangles.push_back(t1);
+                    triangles.push_back(t2);
+                } else if (slist.size() == 4) {
+                    Triangle t1(points[point_index1 - 1], points[point_index2 - 1], points[point_index3 - 1]);
+                    triangles.push_back(t1);
+                } else {
+                    printf("Can't parse polygons with more than 4 sides\n");
+                }
+            }
+        }
+    } else {
+        cout << "wrong reading file" << endl;
+        return 1;
+    }
+
+
+    infile.close();
+    return 0;
+}
+
 void output_to_obj(){
 
     ofstream output_file;
@@ -642,7 +724,19 @@ int main(int argc, char *argv[]) {
     int i = 3;
     //reading the file name
     inputfile_name = argv[1];
-    readinfile();//reading from file
+    string extension = inputfile_name.substr(inputfile_name.size() - 3);
+
+    if(extension.compare("bez") == 0) {
+        readinfile(); //reading from bez file
+
+    } else if (extension.compare("obj") == 0){
+        readobj(); //reading from obj file
+        if_input_obj = true;
+    } else {
+        cout << "wrong reading file" << endl;
+        return -1;
+    }
+
     SUB_DIV_PARAM = atof(argv[2]);
     while (i < argc) {
         if (strcmp(argv[i], "-o")) {

@@ -91,7 +91,7 @@ float Vec3::dist(Vec3 &va) const {
     return (*this - va).length();
 }
 
-Vec3 Vec3::cross(Vec3 &va) const {
+Vec3 Vec3::cross(Vec3 va) const {
     return Vec3(this->y * va.z - this->z * va.y,
                 this->z * va.x - this->x * va.z,
                 this->x * va.y - this->y * va.x);

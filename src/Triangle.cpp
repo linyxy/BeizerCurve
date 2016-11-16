@@ -15,8 +15,22 @@ Triangle::Triangle() {
     p3 = Vec3();
 }
 
-Triangle::Triangle(const Vec3 &p1, const Vec3 &p2, const Vec3 &p3) : p1(p1), p2(p2), p3(p3) {}
+Triangle::Triangle(const Vec3 &p1, const Vec3 &p2, const Vec3 &p3) : p1(p1), p2(p2), p3(p3) {
 
+    normal = (p1-p2).cross(Vec3(p1-p3));
+    normal.normal();
+}
+
+void Triangle::draw(){
+
+    glBegin(GL_TRIANGLES);
+    GLfloat gl_normal[] = {normal.x, normal.y, normal.z};
+    glNormal3fv(gl_normal);
+    glVertex3f(p1.x, p1.y, p1.z);
+    glVertex3f(p2.x, p2.y, p2.z);
+    glVertex3f(p3.x, p3.y, p3.z);
+    glEnd();
+}
 
 
 //

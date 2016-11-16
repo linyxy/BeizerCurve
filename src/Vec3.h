@@ -48,7 +48,7 @@ public:
 
     Vec3 indi_scale(Vec3 &va) const;
     //cross product
-    Vec3 cross(Vec3 &va) const;
+    Vec3 cross(Vec3 va) const;
 
     void to_str() const;
 

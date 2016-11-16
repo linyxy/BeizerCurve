@@ -2,6 +2,21 @@
 // Created by Linyxy on 16/10/24.
 //
 
+#include <vector>
+#include <fstream>
+#include <cmath>
+
+//include header file for glfw library so that we can use OpenGL
+#include <GLFW/glfw3.h>
+
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+
+//include matrix
+//#include <glm/glm.hpp>
+
+
 #ifndef RAYTRACER_TRIANGLE_H
 #define RAYTRACER_TRIANGLE_H
 
@@ -12,6 +27,7 @@
 class Triangle {
 public:
     Vec3 p1,p2,p3;
+    Vec3 normal;
 
 //    Triangle(const )
 
@@ -27,6 +43,8 @@ public:
      */
 //    bool intersect(Ray& ray, float* thit, Intersection* in,BRDF* intensities);
 //    bool intersectT(Ray& ray, float* thit);
+public:
+    void draw();
 
 };
 
