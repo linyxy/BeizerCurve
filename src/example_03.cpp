@@ -42,6 +42,7 @@ string inputfile_name;
 inline float sqr(float x) { return x * x; }
 
 double SUB_DIV_PARAM = 0.1;
+double ADAP_PARAM = 0.1;
 //dirLight pt = dirLight(Vec3(1,1,1),Color(1,1,1));
 vector<BeizerPatch> bzs;
 
@@ -73,6 +74,12 @@ int FLAT_SMOOTH = 0;
  */
 int render_obj = 2;
 
+/*
+ * adaptive factor
+ * 0 : uniform
+ * 1 : adaptive
+ */
+int uniform_adaptive = 0;
 //****************************************************
 // Simple init function
 //****************************************************
@@ -223,25 +230,7 @@ void drawCube() {
     glEnd();  // End of drawing color-cube
 }
 
-//****************************************************
-// Difuse Shader
-//****************************************************
-//Vec3 diffuse_comp(Vec3 nor){
-//    //nor & ray_dir already normalized
-//    Vec3 refle = Vec3(1,1,1);
-//    Vec3 result = Vec3();
-//
-//    //iterate through directional light
-//
-//        GLfloat d = (pt.direction) * nor;
-//        Vec3 comp = d * pt.color.co;
-//
-//        result += comp.indi_scale(refle);
-//
-//
-//
-//    return result;
-//}
+
 
 //****************************************************
 // Bezier interpretation
@@ -307,9 +296,6 @@ int bezpatchinterp(BeizerPatch &bz, double u, double v, Vec3 *p, Vec3 *n) {
     bezcurveinterp(ucurve, u, p, &dPdu);
 
     *n = dPdu.cross(dPdv);
-    if((*n).is_zero()){
-        *n = dPdv;
-    }
     n->normal();
 
     return 0;
@@ -343,26 +329,7 @@ int beizerContour() {
     return 0;
 }
 
-int tessellateSinglePatch(BeizerPatch &bz) {
-    double step_size = SUB_DIV_PARAM;
-    for (double t_hor = 0; t_hor < 1.001; t_hor += step_size) {
-        glBegin(GL_LINE_STRIP);
-//        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-        glPolygonMode(GL_FRONT, GL_LINE);
-        glColor3f(1.0f, 1.0f, 1.0f);
-//        glLineWidth(1);
-        for (double t_ver = 0; t_ver < 1.001; t_ver += step_size) {
-            Vec3 A1 = Vec3(), B2 = Vec3();//,B1 = Vec3(),C = Vec3();
-            Vec3 nor = Vec3();
-            bezpatchinterp(bz, t_hor, t_ver, &A1, &nor);
-            bezpatchinterp(bz, t_hor + step_size, t_ver, &B2, &nor);
-            glVertex3f(A1.x, A1.y, A1.z);
-            glVertex3f(B2.x, B2.y, B2.z);
-        }
-        glEnd();
-    }
-    return 0;
-}
+
 
 int tessellateSinglePatchV2(BeizerPatch &bz) {
     double step_size = SUB_DIV_PARAM;
@@ -461,8 +428,94 @@ int uniformTessellation() {
     return 0;
 }
 
-int adaptiveTessellation() {
+Vec3 midPoint(Vec3 &A, Vec3 &B){
+    return (A+B)*.5;
+}
 
+void dissembleTriangle(){
+
+}
+
+int adaptivetessellateSinglePatch(BeizerPatch &bz) {
+    double step_size = SUB_DIV_PARAM;
+    double hss = step_size *.5; //half step size
+    double er = ADAP_PARAM;
+    for (double t_hor = 0; t_hor < 1.001; t_hor += step_size) {
+        glBegin(GL_LINE);
+//        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+        glPolygonMode(GL_FRONT, GL_LINE);
+        glColor3f(1.0f, 1.0f, 1.0f);
+//        glLineWidth(1);
+        for (double t_ver = 0; t_ver < 1.001; t_ver += step_size) {
+            Vec3 A1 = Vec3(), B2 = Vec3(), B1 = Vec3(), C = Vec3();
+            Vec3 nor = Vec3();
+            bezpatchinterp(bz, t_hor, t_ver, &A1, &nor);
+            bezpatchinterp(bz, t_hor + step_size, t_ver, &B2, &nor);
+            bezpatchinterp(bz, t_hor, t_ver + step_size, &B1, &nor);
+            bezpatchinterp(bz, t_hor + step_size, t_ver + step_size, &C, &nor);
+//            Vec3 A1 = Vec3(), B2 = Vec3(), B1 = Vec3(), C = Vec3();
+//            Vec3 nor = Vec3();
+//            bezpatchinterp(bz, t_hor, t_ver, &A1, &nor);
+//            bezpatchinterp(bz, t_hor + step_size, t_ver, &B2, &nor);
+//            bezpatchinterp(bz, t_hor, t_ver + step_size, &B1, &nor);
+//            bezpatchinterp(bz, t_hor + step_size, t_ver + step_size, &C, &nor);
+//            //edge test
+//            Vec3 E1 = midPoint(A1,B1), E2 = midPoint(A1,B2);
+//            Vec3 E3 = midPoint(B2,C), E4 = midPoint(B1,C), E5 = midPoint(B1,B2);
+//            Vec3 EN1 = Vec3(), EN2 = Vec3 ();
+//            Vec3 EN3 = Vec3(), EN4 = Vec3(), EN5 = Vec3();
+//
+//            Vec3 m1 = Vec3(), m2 = Vec3 ();
+//            Vec3 m3 = Vec3(), m4 = Vec3(), m5 = Vec3();
+//            bezpatchinterp(bz,t_hor,t_ver+hss,&m1,&EN1);
+//            bezpatchinterp(bz,t_hor+hss,t_ver,&m2,&EN2);
+//            bezpatchinterp(bz,t_hor+step_size,t_ver+hss,&m3,&EN3);
+//            bezpatchinterp(bz,t_hor+hss,t_ver+step_size,&m4,&EN4);
+//            bezpatchinterp(bz,t_hor+hss,t_ver+hss,&m5,&EN5);
+//            //edge points built
+//            //making test
+//            //construct left triangle first
+//            //A B1 B2
+//            if(A1.dist(E1)>er){
+//                //A B1 边拆分
+//            }
+//
+//            glVertex3f(A1.x, A1.y, A1.z);
+//            glVertex3f(B2.x, B2.y, B2.z);
+//            glVertex3f(B1.x, B1.y, B1.z);
+//            glVertex3f(A1.x, A1.y, A1.z);
+//            glVertex3f(B2.x, B2.y, B2.z);
+//            glVertex3f(C.x, C.y, C.z);
+//            glVertex3f(B1.x, B1.y, B1.z);
+        }
+        glEnd();
+    }
+    return 0;
+}
+
+int adaptiveTessellation() {
+    vector<BeizerPatch>::iterator bz_unit = bzs.begin();
+    if (MODE_SELECTOR == 4) {
+        while (bz_unit != bzs.end()) {
+            glDisable(GL_LIGHTING);
+            adaptivetessellateSinglePatch(*bz_unit);
+            glEnable(GL_LIGHTING);
+            bz_unit++;
+        }
+    } else if (MODE_SELECTOR == 5) {
+        while (bz_unit != bzs.end()) {
+            adaptivetessellateSinglePatch(*bz_unit);
+            bz_unit++;
+        }
+    } else if (MODE_SELECTOR == 6) {
+        while (bz_unit != bzs.end()) {
+            adaptivetessellateSinglePatch(*bz_unit);
+            glDisable(GL_LIGHTING);
+            adaptivetessellateSinglePatch(*bz_unit);
+            glEnable(GL_LIGHTING);
+            bz_unit++;
+        }
+    }
 }
 
 //****************************************************
@@ -599,8 +652,10 @@ int main(int argc, char *argv[]) {
             string name(argv[i]);
 //            OUTPUT_FILE = name + ".ppm";
 
-        } else if (0) {
-
+        } else if (!strcmp(argv[i], "-a")) {
+            i++;
+            uniform_adaptive = 1;
+            MODE_SELECTOR = 4;
         } else {
             i++;
         }
