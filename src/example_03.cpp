@@ -70,9 +70,11 @@ vector<Triangle> triangles;
  * 2 : uniform tessellation diffuse
  * 3 : uniform tess wire && deffuse
  * 4 : adaptive tess wire form
- * 5 : adaptive tess wire form
- * 6 : adaptive tess wire form
+ * 5 : adaptive tess diffuse
+ * 6 : adaptive tess wire && deffuse
  */
+
+
 int MODE_SELECTOR = 2;
 
 /*
