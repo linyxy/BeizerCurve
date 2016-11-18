@@ -855,6 +855,7 @@ int main(int argc, char *argv[]) {
     } else if (extension.compare("obj") == 0){
         readobj(); //reading from obj file
         if_input_obj = true;
+        cout << "reading from .obj file" << endl;
     } else {
         cout << "wrong reading file" << endl;
         return -1;
