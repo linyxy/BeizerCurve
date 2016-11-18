@@ -28,6 +28,9 @@ class Triangle {
 public:
     Vec3 p1,p2,p3;
     Vec3 normal;
+    Vec3 p1_normal;
+    Vec3 p2_normal;
+    Vec3 p3_normal;
 
 //    Triangle(const )
 
@@ -44,7 +47,8 @@ public:
 //    bool intersect(Ray& ray, float* thit, Intersection* in,BRDF* intensities);
 //    bool intersectT(Ray& ray, float* thit);
 public:
-    void draw();
+    void draw_f();
+    void draw_s();
 
 };
 

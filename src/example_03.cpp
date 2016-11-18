@@ -83,7 +83,9 @@ int MODE_SELECTOR = 2;
  * 0 : FLAT
  * 1 : SMOOTH
  */
-int FLAT_SMOOTH = 0;
+int FLAT_SMOOTH = 0; // SMOOTH_MODE
+int WIREFRAME_MODE = 0;
+int HIDDENLINE_MODE = 0;
 
 /*
  * 0 : arch.bez
@@ -164,7 +166,10 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
                 if (MODE_SELECTOR == 1) { MODE_SELECTOR = 2; }
                 else if (MODE_SELECTOR == 2) { MODE_SELECTOR = 1; }
                 else if (MODE_SELECTOR == 3) { MODE_SELECTOR = 1; }
+                WIREFRAME_MODE = (!WIREFRAME_MODE);
             }
+
+
             break;
         case GLFW_KEY_H: // Filled vs. Hidden-line Mode
             if(action){
@@ -172,7 +177,10 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
                 else if (MODE_SELECTOR == 3) { MODE_SELECTOR = 2; }
                 else if (MODE_SELECTOR > 3) MODE_SELECTOR = 6;
                 else if (MODE_SELECTOR == 6) { MODE_SELECTOR = 4; }
+                HIDDENLINE_MODE = (!HIDDENLINE_MODE);
             }
+
+
             break;
 
         case GLFW_KEY_S: // Flat vs. Smooth Shading
@@ -626,13 +634,72 @@ void teapot_mat(){
 void render_obj_file(){
     glPushMatrix();
     vector<Triangle>::iterator tri_iter = triangles.begin();
-    while (tri_iter != triangles.end()) {
+
+    if (WIREFRAME_MODE){
+//        glBegin(GL_LINE_STRIP);
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glDisable(GL_LIGHTING);
+        while (tri_iter != triangles.end()){
+            (*tri_iter).draw_f();
+            tri_iter++;
+        }
+//        glEnable(GL_LIGHTING);
+
+    } else if (HIDDENLINE_MODE){
+//        cout << "Hidden" << endl;
+
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//        glEnable(GL_POLYGON_OFFSET_FILL);
+
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//        glBegin(GL_LINE_STRIP);
+        glPolygonMode(GL_FRONT, GL_LINE);
+        glDisable(GL_LIGHTING);
+        while (tri_iter != triangles.end()){
+            (*tri_iter).draw_f();
+            tri_iter++;
+        };
+
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glEnable(GL_LIGHTING);
+        glPolygonOffset(0.5, 0.5);
+        glColor3f(0.0,0.0,0.0);
+        while (tri_iter != triangles.end()){
+            (*tri_iter).draw_s();
+            tri_iter++;
+        }
+        glDisable(GL_POLYGON_OFFSET_FILL);
+        glColor3f(1.0,1.0,1.0);
+
+
+
+//        glEnable(GL_LIGHTING);
+
+    } else {
         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
         glEnable(GL_LIGHTING);
-        (*tri_iter).draw();
 
-        tri_iter++;
+        if (FLAT_SMOOTH){   //Smooth
+
+            while (tri_iter != triangles.end()){
+                (*tri_iter).draw_s();
+                tri_iter++;
+            }
+
+
+        } else {   // FLAT
+
+            while (tri_iter != triangles.end()){
+                (*tri_iter).draw_f();
+                tri_iter++;
+            }
+
+        }
     }
+
     glPopMatrix();
 }
 
@@ -755,8 +822,6 @@ int readobj() {
     printf("reading obj from file: %s \n", inputfile_name.c_str());
     ifstream infile(inputfile_name.c_str(), ios::in);
 
-    int num_patches;
-//    char buffer[200];
     string line;
 
 
@@ -825,7 +890,7 @@ void output_to_obj(){
                 output_file << "v " << B1.x << " " << B1.y << " " << B1.z << "\n";
                 output_file << "v " << B2.x << " " << B2.y << " " << B2.z << "\n";
                 output_file << "v " << C.x << " " << C.y << " " << C.z << "\n";
-                output_file << "f " << vertex_index << " " << vertex_index+1 << " " << vertex_index+2 << "\n";
+                output_file << "f " << vertex_index << " " << vertex_index+2 << " " << vertex_index+1 << "\n";
                 output_file << "f " << vertex_index+1 << " " << vertex_index+2 << " " << vertex_index+3 << "\n";
                 vertex_index += 4;
             }

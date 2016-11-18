@@ -21,7 +21,7 @@ Triangle::Triangle(const Vec3 &p1, const Vec3 &p2, const Vec3 &p3) : p1(p1), p2(
     normal.normal();
 }
 
-void Triangle::draw(){
+void Triangle::draw_f(){
 
     glBegin(GL_TRIANGLES);
     GLfloat gl_normal[] = {normal.x, normal.y, normal.z};
@@ -32,6 +32,25 @@ void Triangle::draw(){
     glEnd();
 }
 
+
+void Triangle::draw_s(){
+
+    glBegin(GL_TRIANGLES);
+
+    GLfloat gl_normal_p1[] = {p1_normal.x, p1_normal.y, p1_normal.z};
+    glNormal3fv(gl_normal_p1);
+    glVertex3f(p1.x, p1.y, p1.z);
+
+    GLfloat gl_normal_p2[] = {p2_normal.x, p2_normal.y, p2_normal.z};
+    glNormal3fv(gl_normal_p2);
+    glVertex3f(p2.x, p2.y, p2.z);
+
+    GLfloat gl_normal_p3[] = {p3_normal.x, p3_normal.y, p3_normal.z};
+    glNormal3fv(gl_normal_p3);
+    glVertex3f(p3.x, p3.y, p3.z);
+
+    glEnd();
+}
 
 //
 //bool Triangle::intersect(Ray &ray, float *thit, Intersection *in, BRDF *intensities) {
