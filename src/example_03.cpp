@@ -16,6 +16,7 @@
 #include "BeizerPatch.h"
 #include "dirLight.h"
 #include "Triangle.h"
+#include "BzPoint.h"
 
 #ifdef _WIN32
 static DWORD lastTime;
@@ -56,6 +57,7 @@ string outputfile_name;
 inline float sqr(float x) { return x * x; }
 
 double SUB_DIV_PARAM = 0.1;
+double ADAP_PARAM = 0.1;
 //dirLight pt = dirLight(Vec3(1,1,1),Color(1,1,1));
 vector<BeizerPatch> bzs;
 vector<Triangle> triangles;
@@ -90,6 +92,12 @@ int FLAT_SMOOTH = 0;
  */
 int render_obj = 2;
 
+/*
+ * adaptive factor
+ * 0 : uniform
+ * 1 : adaptive
+ */
+int uniform_adaptive = 0;
 //****************************************************
 // Simple init function
 //****************************************************
@@ -241,6 +249,7 @@ void drawCube() {
     glEnd();  // End of drawing color-cube
 }
 
+
 //****************************************************
 // Diffuse Shader
 //****************************************************
@@ -260,6 +269,7 @@ void drawCube() {
 //
 //    return result;
 //}
+
 
 //****************************************************
 // Bezier interpretation
@@ -325,9 +335,6 @@ int bezpatchinterp(BeizerPatch &bz, double u, double v, Vec3 *p, Vec3 *n) {
     bezcurveinterp(ucurve, u, p, &dPdu);
 
     *n = dPdu.cross(dPdv);
-    if((*n).is_zero()){
-        *n = dPdv;
-    }
     n->normal();
 
     return 0;
@@ -361,26 +368,7 @@ int beizerContour() {
     return 0;
 }
 
-int tessellateSinglePatch(BeizerPatch &bz) {
-    double step_size = SUB_DIV_PARAM;
-    for (double t_hor = 0; t_hor < 1.001; t_hor += step_size) {
-        glBegin(GL_LINE_STRIP);
-//        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-        glPolygonMode(GL_FRONT, GL_LINE);
-        glColor3f(1.0f, 1.0f, 1.0f);
-//        glLineWidth(1);
-        for (double t_ver = 0; t_ver < 1.001; t_ver += step_size) {
-            Vec3 A1 = Vec3(), B2 = Vec3();//,B1 = Vec3(),C = Vec3();
-            Vec3 nor = Vec3();
-            bezpatchinterp(bz, t_hor, t_ver, &A1, &nor);
-            bezpatchinterp(bz, t_hor + step_size, t_ver, &B2, &nor);
-            glVertex3f(A1.x, A1.y, A1.z);
-            glVertex3f(B2.x, B2.y, B2.z);
-        }
-        glEnd();
-    }
-    return 0;
-}
+
 
 int tessellateSinglePatchV2(BeizerPatch &bz) {
     double step_size = SUB_DIV_PARAM;
@@ -479,8 +467,141 @@ int uniformTessellation() {
     return 0;
 }
 
-int adaptiveTessellation() {
+Vec3 midPoint(Vec3 &A, Vec3 &B){
+    return (A+B)*.5;
+}
 
+double midPoint(double u1,double u2) {
+    return (u1 + u2) * .5;
+}
+
+
+
+void dissembleTriangle(BeizerPatch &bz,BzPoint &p1, BzPoint &p2, BzPoint &p3){
+    int dis_index = 0; // 1 2 4 -> 1 3 7;
+//    double err = step_size *.5; //half step size
+    Vec3 m1 = midPoint(p1.pos,p2.pos);
+    Vec3 bm1 = Vec3(),nor1 = Vec3();
+    bezpatchinterp(bz, midPoint(p1.u,p2.u), midPoint(p1.v,p2.v), &bm1, &nor1);
+    if((bm1-m1).length() > ADAP_PARAM){
+        //A1 B1 边需要拆分
+        dis_index++;
+    }
+    Vec3 m2 = midPoint(p2.pos,p3.pos);
+    Vec3 bm2 = Vec3(),nor2 = Vec3();
+    bezpatchinterp(bz, midPoint(p2.u,p3.u), midPoint(p2.v,p3.v), &bm2, &nor2);
+    if((bm2-m2).length() > ADAP_PARAM){
+        //P2 P3 边需要拆分
+        dis_index+=2;
+    }
+    Vec3 m3 = midPoint(p1.pos,p3.pos);
+    Vec3 bm3 = Vec3(),nor3 = Vec3();
+    bezpatchinterp(bz, midPoint(p1.u,p3.u), midPoint(p1.v,p3.v), &bm3, &nor3);
+    if((bm3-m3).length() > ADAP_PARAM){
+        //P1 P3 边需要拆分
+        dis_index+=4;
+    }
+    //
+    if(dis_index==0){
+        //不需要拆分了,输出,end
+        glBegin(GL_LINE_STRIP);
+        glPolygonMode(GL_FRONT, GL_LINE);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glVertex3f(p1.pos.x, p1.pos.y, p1.pos.z);
+        glVertex3f(p2.pos.x, p2.pos.y, p2.pos.z);
+        glVertex3f(p3.pos.x, p3.pos.y, p3.pos.z);
+        glEnd();
+        return;
+
+    }
+
+    BzPoint bzm1 = BzPoint(bm1, midPoint(p1.u,p2.u), midPoint(p1.v,p2.v));
+    BzPoint bzm2 = BzPoint(bm2, midPoint(p2.u,p3.u), midPoint(p2.v,p3.v));
+    BzPoint bzm3 = BzPoint(bm3, midPoint(p1.u,p3.u), midPoint(p1.v,p3.v));
+    if(dis_index==7){
+        //所有三角形都要拆分
+
+
+        dissembleTriangle(bz,p1,bzm1,bzm3);
+        dissembleTriangle(bz,bzm1,p2,bzm2);
+        dissembleTriangle(bz,bzm3,bzm2,p3);
+    }
+    //接下来拆分成2个or 1个三角
+    else if(dis_index  == 1) {
+        dissembleTriangle(bz,p1,bzm1,p3);
+        dissembleTriangle(bz,p3,bzm1,p2);
+    } else if(dis_index == 2) {
+        dissembleTriangle(bz,p1,p2,bzm2);
+        dissembleTriangle(bz,p1,bzm2,p3);
+    } else if(dis_index == 4){
+        dissembleTriangle(bz,p1,p2,bzm3);
+        dissembleTriangle(bz,bzm3,p2,p3);
+    } else if(dis_index == 3){
+        dissembleTriangle(bz,p1,bzm1,p3);
+        dissembleTriangle(bz,p1,p2,bzm2);
+        dissembleTriangle(bz,p3,bzm1,bzm2);
+    } else if(dis_index == 5){
+        dissembleTriangle(bz,p1,bzm1,bzm3);
+        dissembleTriangle(bz,bzm3,bzm1,p3);
+        dissembleTriangle(bz,p3,bzm1,p2);
+    } else if(dis_index == 6){
+        dissembleTriangle(bz,p1,p2,bzm2);
+        dissembleTriangle(bz,p1,bzm2,bzm3);
+        dissembleTriangle(bz,bzm3,bzm2,p3);
+    }
+}
+
+int adaptivetessellateSinglePatch(BeizerPatch &bz) {
+    double step_size = SUB_DIV_PARAM;
+    double er = ADAP_PARAM;
+
+    Vec3 A1 = Vec3(), B2 = Vec3(), B1 = Vec3(), C = Vec3();
+    Vec3 nor = Vec3();
+    bezpatchinterp(bz, 0, 0, &A1, &nor);
+    bezpatchinterp(bz, 1, 0, &B2, &nor);
+    bezpatchinterp(bz, 0, 1, &B1, &nor);
+    bezpatchinterp(bz, 1, 1, &C, &nor);
+
+    BzPoint bzA = BzPoint(A1,0,0);
+    BzPoint bzB1 = BzPoint(B1,0,1);
+    BzPoint bzB2 = BzPoint(B2,1,0);
+    BzPoint bzC = BzPoint(C,1,1);
+
+    dissembleTriangle(bz,bzA,bzB1,bzB2);
+    dissembleTriangle(bz,bzB2,bzB1,bzC);
+//    for (double t_hor = 0; t_hor < 1.001; t_hor += step_size) {
+//        glBegin(GL_LINE);
+//        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+
+        glPolygonMode(GL_FRONT, GL_LINE);
+
+
+    return 0;
+}
+
+int adaptiveTessellation() {
+    vector<BeizerPatch>::iterator bz_unit = bzs.begin();
+    if (MODE_SELECTOR == 4) {
+        while (bz_unit != bzs.end()) {
+            glDisable(GL_LIGHTING);
+            adaptivetessellateSinglePatch(*bz_unit);
+            glEnable(GL_LIGHTING);
+            bz_unit++;
+        }
+    } else if (MODE_SELECTOR == 5) {
+        while (bz_unit != bzs.end()) {
+            adaptivetessellateSinglePatch(*bz_unit);
+            bz_unit++;
+        }
+    } else if (MODE_SELECTOR == 6) {
+        while (bz_unit != bzs.end()) {
+            adaptivetessellateSinglePatch(*bz_unit);
+            glDisable(GL_LIGHTING);
+            adaptivetessellateSinglePatch(*bz_unit);
+            glEnable(GL_LIGHTING);
+            bz_unit++;
+        }
+    }
 }
 
 //****************************************************
@@ -748,8 +869,10 @@ int main(int argc, char *argv[]) {
 
             i++;
 
-        } else if (0) {
-
+        } else if (!strcmp(argv[i], "-a")) {
+            i++;
+            uniform_adaptive = 1;
+            MODE_SELECTOR = 4;
         } else {
             i++;
         }
