@@ -13,7 +13,9 @@ public:
     Vec3 pos;
     double u,v;
 
-    BzPoint(const Vec3 &pos, double u, double v);
+    Vec3 normal;
+
+    BzPoint(const Vec3 &pos, double u, double v, const Vec3 &normal);
 
     BzPoint();
 };

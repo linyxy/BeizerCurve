@@ -166,6 +166,9 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
                 if (MODE_SELECTOR == 1) { MODE_SELECTOR = 2; }
                 else if (MODE_SELECTOR == 2) { MODE_SELECTOR = 1; }
                 else if (MODE_SELECTOR == 3) { MODE_SELECTOR = 1; }
+                else if (MODE_SELECTOR == 4) { MODE_SELECTOR = 5; }
+                else if (MODE_SELECTOR == 5) { MODE_SELECTOR = 4; }
+                else if (MODE_SELECTOR == 6) { MODE_SELECTOR = 4; }
                 WIREFRAME_MODE = (!WIREFRAME_MODE);
             }
 
@@ -175,8 +178,8 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
             if(action){
                 if (MODE_SELECTOR < 3) { MODE_SELECTOR = 3; }
                 else if (MODE_SELECTOR == 3) { MODE_SELECTOR = 2; }
-                else if (MODE_SELECTOR > 3) MODE_SELECTOR = 6;
-                else if (MODE_SELECTOR == 6) { MODE_SELECTOR = 4; }
+                else if (MODE_SELECTOR > 3 and MODE_SELECTOR < 6) MODE_SELECTOR = 6;
+                else if (MODE_SELECTOR == 6) { MODE_SELECTOR = 5; }
                 HIDDENLINE_MODE = (!HIDDENLINE_MODE);
             }
 
@@ -203,58 +206,6 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
             break;
     }
 
-}
-
-//****************************************************
-// Draw a cube. You don't need this for your final assignment, but it's
-// here so you don't look at a blank screen.
-// Taken from https://www.ntu.edu.sg/home/ehchua/programming/opengl/CG_Examples.html
-//****************************************************
-void drawCube() {
-    glBegin(GL_QUADS);                // Begin drawing the color cube with 6 quads
-    // Top face (y = 1.0f)
-    // Define vertices in counter-clockwise (CCW) order with normal pointing out
-    glColor3f(0.0f, 1.0f, 0.0f);     // Green
-    glVertex3f(1.0f, 1.0f, -1.0f);
-    glVertex3f(-1.0f, 1.0f, -1.0f);
-    glVertex3f(-1.0f, 1.0f, 1.0f);
-    glVertex3f(1.0f, 1.0f, 1.0f);
-
-    // Bottom face (y = -1.0f)
-    glColor3f(1.0f, 0.5f, 0.0f);     // Orange
-    glVertex3f(1.0f, -1.0f, 1.0f);
-    glVertex3f(-1.0f, -1.0f, 1.0f);
-    glVertex3f(-1.0f, -1.0f, -1.0f);
-    glVertex3f(1.0f, -1.0f, -1.0f);
-
-    // Front face  (z = 1.0f)
-    glColor3f(1.0f, 0.0f, 0.0f);     // Red
-    glVertex3f(1.0f, 1.0f, 1.0f);
-    glVertex3f(-1.0f, 1.0f, 1.0f);
-    glVertex3f(-1.0f, -1.0f, 1.0f);
-    glVertex3f(1.0f, -1.0f, 1.0f);
-
-    // Back face (z = -1.0f)
-    glColor3f(1.0f, 1.0f, 0.0f);     // Yellow
-    glVertex3f(1.0f, -1.0f, -1.0f);
-    glVertex3f(-1.0f, -1.0f, -1.0f);
-    glVertex3f(-1.0f, 1.0f, -1.0f);
-    glVertex3f(1.0f, 1.0f, -1.0f);
-
-    // Left face (x = -1.0f)
-    glColor3f(0.0f, 0.0f, 1.0f);     // Blue
-    glVertex3f(-1.0f, 1.0f, 1.0f);
-    glVertex3f(-1.0f, 1.0f, -1.0f);
-    glVertex3f(-1.0f, -1.0f, -1.0f);
-    glVertex3f(-1.0f, -1.0f, 1.0f);
-
-    // Right face (x = 1.0f)
-    glColor3f(1.0f, 0.0f, 1.0f);     // Magenta
-    glVertex3f(1.0f, 1.0f, -1.0f);
-    glVertex3f(1.0f, 1.0f, 1.0f);
-    glVertex3f(1.0f, -1.0f, 1.0f);
-    glVertex3f(1.0f, -1.0f, -1.0f);
-    glEnd();  // End of drawing color-cube
 }
 
 
@@ -492,7 +443,7 @@ void dissembleTriangle(BeizerPatch &bz,BzPoint &p1, BzPoint &p2, BzPoint &p3){
     Vec3 bm1 = Vec3(),nor1 = Vec3();
     bezpatchinterp(bz, midPoint(p1.u,p2.u), midPoint(p1.v,p2.v), &bm1, &nor1);
     if((bm1-m1).length() > ADAP_PARAM){
-        //A1 B1 边需要拆分
+        //P1 P2 边需要拆分
         dis_index++;
     }
     Vec3 m2 = midPoint(p2.pos,p3.pos);
@@ -512,20 +463,72 @@ void dissembleTriangle(BeizerPatch &bz,BzPoint &p1, BzPoint &p2, BzPoint &p3){
     //
     if(dis_index==0){
         //不需要拆分了,输出,end
-        glBegin(GL_LINE_STRIP);
-        glPolygonMode(GL_FRONT, GL_LINE);
-        glColor3f(1.0f, 1.0f, 1.0f);
-        glVertex3f(p1.pos.x, p1.pos.y, p1.pos.z);
-        glVertex3f(p2.pos.x, p2.pos.y, p2.pos.z);
-        glVertex3f(p3.pos.x, p3.pos.y, p3.pos.z);
-        glEnd();
-        return;
+
+        if (MODE_SELECTOR == 4) {
+            glDisable(GL_LIGHTING);
+            glBegin(GL_LINE_STRIP);
+            glPolygonMode(GL_FRONT, GL_LINE);
+            glColor3f(1.0f, 1.0f, 1.0f);
+            glVertex3f(p1.pos.x, p1.pos.y, p1.pos.z);
+            glVertex3f(p2.pos.x, p2.pos.y, p2.pos.z);
+            glVertex3f(p3.pos.x, p3.pos.y, p3.pos.z);
+            glVertex3f(p1.pos.x, p1.pos.y, p1.pos.z);
+            glEnable(GL_LIGHTING);
+            glEnd();
+        } else if (MODE_SELECTOR == 5) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glEnable(GL_LIGHTING);
+
+            glBegin(GL_TRIANGLES);
+
+            glNormal3f(p1.normal.x, p1.normal.y, p1.normal.z);
+            glVertex3f(p1.pos.x, p1.pos.y, p1.pos.z);
+
+            glNormal3f(p2.normal.x, p2.normal.y, p2.normal.z);
+            glVertex3f(p2.pos.x, p2.pos.y, p2.pos.z);
+
+            glNormal3f(p3.normal.x, p3.normal.y, p3.normal.z);
+            glVertex3f(p3.pos.x, p3.pos.y, p3.pos.z);
+
+
+
+            glEnd();
+
+        } else if (MODE_SELECTOR == 6) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glEnable(GL_LIGHTING);
+
+            glBegin(GL_TRIANGLES);
+
+            glNormal3f(p1.normal.x, p1.normal.y, p1.normal.z);
+            glVertex3f(p1.pos.x, p1.pos.y, p1.pos.z);
+            glNormal3f(p2.normal.x, p2.normal.y, p2.normal.z);
+            glVertex3f(p2.pos.x, p2.pos.y, p2.pos.z);
+            glNormal3f(p3.normal.x, p3.normal.y, p3.normal.z);
+            glVertex3f(p3.pos.x, p3.pos.y, p3.pos.z);
+
+            glEnd();
+            glDisable(GL_LIGHTING);
+
+
+            glBegin(GL_LINE_STRIP);
+            glPolygonMode(GL_FRONT, GL_LINE);
+            glColor3f(1.0f, 1.0f, 1.0f);
+            glVertex3f(p1.pos.x, p1.pos.y, p1.pos.z);
+            glVertex3f(p2.pos.x, p2.pos.y, p2.pos.z);
+            glVertex3f(p3.pos.x, p3.pos.y, p3.pos.z);
+            glVertex3f(p1.pos.x, p1.pos.y, p1.pos.z);
+
+            glEnable(GL_LIGHTING);
+            glEnd();
+        }
+
 
     }
 
-    BzPoint bzm1 = BzPoint(bm1, midPoint(p1.u,p2.u), midPoint(p1.v,p2.v));
-    BzPoint bzm2 = BzPoint(bm2, midPoint(p2.u,p3.u), midPoint(p2.v,p3.v));
-    BzPoint bzm3 = BzPoint(bm3, midPoint(p1.u,p3.u), midPoint(p1.v,p3.v));
+    BzPoint bzm1 = BzPoint(bm1, midPoint(p1.u,p2.u), midPoint(p1.v,p2.v),nor1);
+    BzPoint bzm2 = BzPoint(bm2, midPoint(p2.u,p3.u), midPoint(p2.v,p3.v),nor2);
+    BzPoint bzm3 = BzPoint(bm3, midPoint(p1.u,p3.u), midPoint(p1.v,p3.v),nor3);
     if(dis_index==7){
         //所有三角形都要拆分
 
@@ -535,16 +538,16 @@ void dissembleTriangle(BeizerPatch &bz,BzPoint &p1, BzPoint &p2, BzPoint &p3){
         dissembleTriangle(bz,bzm3,bzm2,p3);
     }
     //接下来拆分成2个or 1个三角
-    else if(dis_index  == 1) {
+    else if(dis_index  == 1) { //Checked
         dissembleTriangle(bz,p1,bzm1,p3);
         dissembleTriangle(bz,p3,bzm1,p2);
-    } else if(dis_index == 2) {
+    } else if(dis_index == 2) {  //Checked
         dissembleTriangle(bz,p1,p2,bzm2);
         dissembleTriangle(bz,p1,bzm2,p3);
-    } else if(dis_index == 4){
+    } else if(dis_index == 4){ //Checked
         dissembleTriangle(bz,p1,p2,bzm3);
         dissembleTriangle(bz,bzm3,p2,p3);
-    } else if(dis_index == 3){
+    } else if(dis_index == 3){ //Checked
         dissembleTriangle(bz,p1,bzm1,p3);
         dissembleTriangle(bz,p1,p2,bzm2);
         dissembleTriangle(bz,p3,bzm1,bzm2);
@@ -564,52 +567,45 @@ int adaptivetessellateSinglePatch(BeizerPatch &bz) {
     double er = ADAP_PARAM;
 
     Vec3 A1 = Vec3(), B2 = Vec3(), B1 = Vec3(), C = Vec3();
-    Vec3 nor = Vec3();
-    bezpatchinterp(bz, 0, 0, &A1, &nor);
-    bezpatchinterp(bz, 1, 0, &B2, &nor);
-    bezpatchinterp(bz, 0, 1, &B1, &nor);
-    bezpatchinterp(bz, 1, 1, &C, &nor);
+    Vec3 norA = Vec3();
+    Vec3 norB1 = Vec3();
+    Vec3 norB2 = Vec3();
+    Vec3 norC = Vec3();
 
-    BzPoint bzA = BzPoint(A1,0,0);
-    BzPoint bzB1 = BzPoint(B1,0,1);
-    BzPoint bzB2 = BzPoint(B2,1,0);
-    BzPoint bzC = BzPoint(C,1,1);
+    bezpatchinterp(bz, 0, 0, &A1, &norA);
+    bezpatchinterp(bz, 0, 1, &B1, &norB1);
+    bezpatchinterp(bz, 1, 0, &B2, &norB2);
+    bezpatchinterp(bz, 1, 1, &C, &norC);
+
+    BzPoint bzA = BzPoint(A1,0,0,norA);
+    BzPoint bzB1 = BzPoint(B1,0,1,norB1);
+    BzPoint bzB2 = BzPoint(B2,1,0,norB2);
+    BzPoint bzC = BzPoint(C,1,1,norC);
 
     dissembleTriangle(bz,bzA,bzB1,bzB2);
     dissembleTriangle(bz,bzB2,bzB1,bzC);
+
 //    for (double t_hor = 0; t_hor < 1.001; t_hor += step_size) {
 //        glBegin(GL_LINE);
-//        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-
-        glPolygonMode(GL_FRONT, GL_LINE);
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//    }
+//    glPolygonMode(GL_FRONT, GL_LINE);
 
 
     return 0;
 }
 
+
 int adaptiveTessellation() {
     vector<BeizerPatch>::iterator bz_unit = bzs.begin();
-    if (MODE_SELECTOR == 4) {
-        while (bz_unit != bzs.end()) {
-            glDisable(GL_LIGHTING);
-            adaptivetessellateSinglePatch(*bz_unit);
-            glEnable(GL_LIGHTING);
-            bz_unit++;
-        }
-    } else if (MODE_SELECTOR == 5) {
-        while (bz_unit != bzs.end()) {
-            adaptivetessellateSinglePatch(*bz_unit);
-            bz_unit++;
-        }
-    } else if (MODE_SELECTOR == 6) {
-        while (bz_unit != bzs.end()) {
-            adaptivetessellateSinglePatch(*bz_unit);
-            glDisable(GL_LIGHTING);
-            adaptivetessellateSinglePatch(*bz_unit);
-            glEnable(GL_LIGHTING);
-            bz_unit++;
-        }
+    while (bz_unit != bzs.end()) {
+
+        adaptivetessellateSinglePatch(*bz_unit);
+
+        bz_unit++;
     }
+
+
 }
 
 //****************************************************
@@ -626,6 +622,8 @@ void teapot_mat(){
         beizerContour();
     } else if (MODE_SELECTOR >= 1 && MODE_SELECTOR <= 3) {
         uniformTessellation();
+    } else if (MODE_SELECTOR >= 4 && MODE_SELECTOR <= 6) {
+        adaptiveTessellation();
     }
     glPopMatrix();
 }
@@ -690,7 +688,7 @@ void render_obj_file(){
             }
 
 
-        } else {   // FLAT
+        } else {   // Flat
 
             while (tri_iter != triangles.end()){
                 (*tri_iter).draw_f();
@@ -927,8 +925,9 @@ int main(int argc, char *argv[]) {
     }
 
     SUB_DIV_PARAM = atof(argv[2]);
+    ADAP_PARAM = atof(argv[2]);
     while (i < argc) {
-        if (strcmp(argv[i], "-o")) {
+        if (!strcmp(argv[i], "-o")) {
             //Output to a obj file
             outputfile_name = argv[i];
             if_output = true;
@@ -938,7 +937,7 @@ int main(int argc, char *argv[]) {
         } else if (!strcmp(argv[i], "-a")) {
             i++;
             uniform_adaptive = 1;
-            MODE_SELECTOR = 4;
+            MODE_SELECTOR = 5;
         } else {
             i++;
         }

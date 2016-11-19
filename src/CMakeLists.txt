@@ -11,7 +11,7 @@ set(APPLICATION_SOURCE
         Vec3.cpp Vec3.h
         Triangle.cpp Triangle.h
         dirLight.cpp dirLight.h
-        Color.cpp Color.h BzPoint.cpp BzPoint.h)
+        Color.cpp Color.h BzPoint.cpp BzPoint.h VxPoint.cpp VxPoint.h)
 
 #-------------------------------------------------------------------------------
 # Set include directories
