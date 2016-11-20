@@ -76,8 +76,7 @@ vector<Triangle> triangles;
  * 6 : adaptive tess wire && deffuse
  */
 
-
-int MODE_SELECTOR = 2;
+int MODE_SELECTOR = 4;
 
 /*
  * 0 : FLAT
@@ -208,26 +207,6 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
 
 }
 
-
-//****************************************************
-// Diffuse Shader
-//****************************************************
-//Vec3 diffuse_comp(Vec3 nor){
-//    //nor & ray_dir already normalized
-//    Vec3 refle = Vec3(1,1,1);
-//    Vec3 result = Vec3();
-//
-//    //iterate through directional light
-//
-//        GLfloat d = (pt.direction) * nor;
-//        Vec3 comp = d * pt.color.co;
-//
-//        result += comp.indi_scale(refle);
-//
-//
-//
-//    return result;
-//}
 
 
 //****************************************************
@@ -453,9 +432,9 @@ void dissembleTriangle(BeizerPatch &bz,BzPoint &p1, BzPoint &p2, BzPoint &p3){
         //P2 P3 边需要拆分
         dis_index+=2;
     }
-    Vec3 m3 = midPoint(p1.pos,p3.pos);
+    Vec3 m3 = midPoint(p3.pos,p1.pos);
     Vec3 bm3 = Vec3(),nor3 = Vec3();
-    bezpatchinterp(bz, midPoint(p1.u,p3.u), midPoint(p1.v,p3.v), &bm3, &nor3);
+    bezpatchinterp(bz, midPoint(p1.u,p3.u), midPoint(p3.v,p1.v), &bm3, &nor3);
     if((bm3-m3).length() > ADAP_PARAM){
         //P1 P3 边需要拆分
         dis_index+=4;
@@ -528,14 +507,15 @@ void dissembleTriangle(BeizerPatch &bz,BzPoint &p1, BzPoint &p2, BzPoint &p3){
 
     BzPoint bzm1 = BzPoint(bm1, midPoint(p1.u,p2.u), midPoint(p1.v,p2.v),nor1);
     BzPoint bzm2 = BzPoint(bm2, midPoint(p2.u,p3.u), midPoint(p2.v,p3.v),nor2);
-    BzPoint bzm3 = BzPoint(bm3, midPoint(p1.u,p3.u), midPoint(p1.v,p3.v),nor3);
+    BzPoint bzm3 = BzPoint(bm3, midPoint(p3.u,p1.u), midPoint(p3.v,p1.v),nor3);
     if(dis_index==7){
         //所有三角形都要拆分
 
-
+//
         dissembleTriangle(bz,p1,bzm1,bzm3);
         dissembleTriangle(bz,bzm1,p2,bzm2);
         dissembleTriangle(bz,bzm3,bzm2,p3);
+        dissembleTriangle(bz,bzm1,bzm2,bzm3);
     }
     //接下来拆分成2个or 1个三角
     else if(dis_index  == 1) { //Checked
@@ -628,6 +608,7 @@ void teapot_mat(){
     glPopMatrix();
 }
 
+void 
 
 void render_obj_file(){
     glPushMatrix();
@@ -713,7 +694,7 @@ void display(GLFWwindow *window) {
     //设置光照
     GLfloat ambient[] = {1.0, 1.0, 1.0, 0.0};
     GLfloat diffuse[] = {1.0, 1.0, 1.0, 1.0};
-    GLfloat position[] = {-1.0, 1.0, -1.0, 0.0};
+    GLfloat position[] = {-40.0, 40.0, -40.0, 0.0};
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
     glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse);  //  Diffuse Light
     glLightfv(GL_LIGHT1, GL_POSITION, position);  // Position
