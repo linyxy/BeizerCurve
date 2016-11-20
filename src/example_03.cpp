@@ -608,7 +608,48 @@ void teapot_mat(){
     glPopMatrix();
 }
 
-void 
+void teacup_mat(){
+    glPushMatrix();
+    glTranslatef(0.0f, -.4f, 1.0f);
+    glRotatef(-45, 1, 0, 0); //rotates the cube below
+//    glTranslatef (0.0, 0.0, 0.0);
+
+    if (!MODE_SELECTOR) {
+        beizerContour();
+    } else if (MODE_SELECTOR >= 1 && MODE_SELECTOR <= 3) {
+        uniformTessellation();
+    } else if (MODE_SELECTOR >= 4 && MODE_SELECTOR <= 6) {
+        adaptiveTessellation();
+    }
+    glPopMatrix();
+}
+
+void arch_mat(){
+    glPushMatrix();
+    glTranslatef(0.0f, -.4f, 1.0f);
+    glRotatef(-45, 1, 0, 0); //rotates the cube below
+//    glTranslatef (0.0, 0.0, 0.0);
+
+    if (!MODE_SELECTOR) {
+        beizerContour();
+    } else if (MODE_SELECTOR >= 1 && MODE_SELECTOR <= 3) {
+        uniformTessellation();
+    } else if (MODE_SELECTOR >= 4 && MODE_SELECTOR <= 6) {
+        adaptiveTessellation();
+    }
+    glPopMatrix();
+}
+
+void default_mat(){
+    if (!MODE_SELECTOR) {
+        beizerContour();
+    } else if (MODE_SELECTOR >= 1 && MODE_SELECTOR <= 3) {
+        uniformTessellation();
+    } else if (MODE_SELECTOR >= 4 && MODE_SELECTOR <= 6) {
+        adaptiveTessellation();
+    }
+    glPopMatrix();
+}
 
 void render_obj_file(){
     glPushMatrix();
@@ -720,7 +761,18 @@ void display(GLFWwindow *window) {
         render_obj_file();
 
     } else {
-        teapot_mat();
+        if(!strcmp(inputfile_name.c_str(),"teapot.bez")){
+            teapot_mat();
+        }
+        else if(!strcmp(inputfile_name.c_str(),"teacup.bez")){
+            teacup_mat();
+        }
+        else if(!strcmp(inputfile_name.c_str(),"arch.bez")){
+            arch_mat();
+        }
+        else{
+            default_mat();
+        }
     }
 
     glPopMatrix();
