@@ -3,7 +3,7 @@
 #include <cmath>
 #include <sstream>
 #include <iostream>
-
+#include <cstring>
 //include header file for glfw library so that we can use OpenGL
 #include <GLFW/glfw3.h>
 
