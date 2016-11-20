@@ -9,6 +9,7 @@ Instructor: James O'Brien
 3. cmake ..
 4. make
 
+
 # Keyboard features
 1. 'ESC': Exit
 2. 'Q': Exit
@@ -17,4 +18,4 @@ Instructor: James O'Brien
 5. 'Shift + ↑': Translate objects up
 6. 'Shift + ←': Translate objects left
 7. 'Shift + →': Translate objects right
-8. Write your own to match the spec...
+8. instructions are same as listed in the assignment spec
